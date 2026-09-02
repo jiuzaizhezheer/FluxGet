@@ -1,9 +1,4 @@
-import type {
-  DownloadTask,
-  DryRunResult,
-  Health,
-  MediaInfo,
-} from "../types/api";
+import type { ContainerChoice, DownloadTask, DryRunResult, Health, MediaInfo } from "../types/api";
 
 type ApiErrorBody = {
   detail?: unknown;
@@ -39,11 +34,11 @@ export function extractInfo(url: string): Promise<MediaInfo> {
   });
 }
 
-export function dryRun(url: string): Promise<DryRunResult> {
+export function dryRun(url: string, container: ContainerChoice): Promise<DryRunResult> {
   return requestJson<DryRunResult>("/api/dry-run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ url, container }),
   });
 }
 

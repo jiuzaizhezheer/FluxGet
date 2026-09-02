@@ -20,6 +20,7 @@ from backend.app.services.media import (
     get_download_task,
     run_dry_run,
     stream_download,
+    CONTAINER_MEDIA_TYPES,
 )
 
 router = APIRouter(tags=["media"])
@@ -44,6 +45,7 @@ def create_download(request: CreateDownloadRequest) -> DownloadTaskResponse:
         id=task.id,
         filename=task.filename,
         media=task.media,
+        container=task.container,
         file_url=f"/api/downloads/{task.id}/file",
     )
 
@@ -51,7 +53,7 @@ def create_download(request: CreateDownloadRequest) -> DownloadTaskResponse:
 @router.post("/dry-run", response_model=DryRunResponse)
 def dry_run(request: DryRunRequest) -> DryRunResponse:
     try:
-        task = run_dry_run(str(request.url))
+        task = run_dry_run(str(request.url), request.container)
     except MediaExtractionError as exc:
         return DryRunResponse(
             passed=False,
@@ -65,6 +67,7 @@ def dry_run(request: DryRunRequest) -> DryRunResponse:
         dry_run_id=task.id,
         filename=task.filename,
         media=task.media,
+        container=task.container,
     )
 
 
@@ -82,7 +85,7 @@ def download_file(task_id: str) -> StreamingResponse:
     encoded_filename = quote(task.filename)
     return StreamingResponse(
         stream,
-        media_type="video/mp4",
+        media_type=CONTAINER_MEDIA_TYPES[task.container],
         headers={
             "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
             "Cache-Control": "no-store",

@@ -22,29 +22,29 @@ class ExtractInfoResponse(RootModel[dict[str, Any]]):
 
 class DryRunRequest(BaseModel):
     url: HttpUrl
+    container: Literal["auto", "mp4", "mkv", "webm", "mov"] = "auto"
 
 
 class DryRunResponse(BaseModel):
     passed: bool
-    reason_code: (
-        Literal[
-            "blocked",
-            "authentication_required",
-            "premium_required",
-            "geo_restricted",
-            "unsupported_url",
-            "unavailable",
-            "no_formats",
-            "network_error",
-            "unknown",
-        ]
-        | None
-    ) = None
+    reason_code: Literal[
+        "blocked",
+        "authentication_required",
+        "premium_required",
+        "geo_restricted",
+        "unsupported_url",
+        "unavailable",
+        "no_formats",
+        "network_error",
+        "incompatible_container",
+        "unknown",
+    ] | None = None
     message: str
     detail: str | None = None
     dry_run_id: str | None = None
     filename: str | None = None
     media: dict[str, Any] | None = None
+    container: Literal["mp4", "mkv", "webm", "mov"] | None = None
 
 
 class CreateDownloadRequest(BaseModel):
@@ -55,4 +55,5 @@ class DownloadTaskResponse(BaseModel):
     id: str
     filename: str
     media: dict[str, Any]
+    container: Literal["mp4", "mkv", "webm", "mov"]
     file_url: str

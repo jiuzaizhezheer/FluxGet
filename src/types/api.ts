@@ -7,6 +7,9 @@ export type Health = {
   ffmpeg: string | null;
 };
 
+export type ContainerChoice = "auto" | "mp4" | "mkv" | "webm" | "mov";
+export type OutputContainer = Exclude<ContainerChoice, "auto">;
+
 export type MediaInfo = {
   id?: string;
   title?: string;
@@ -28,6 +31,7 @@ export type DownloadTask = {
   id: string;
   filename: string;
   media: MediaInfo;
+  container: OutputContainer;
   file_url: string;
 };
 
@@ -42,6 +46,7 @@ export type DryRunResult = {
     | "unavailable"
     | "no_formats"
     | "network_error"
+    | "incompatible_container"
     | "unknown"
     | null;
   message: string;
@@ -49,4 +54,5 @@ export type DryRunResult = {
   dry_run_id: string | null;
   filename: string | null;
   media: MediaInfo | null;
+  container: OutputContainer | null;
 };

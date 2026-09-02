@@ -18,7 +18,7 @@ class MediaServiceTest(unittest.TestCase):
         self, youtube_dl: MagicMock
     ) -> None:
         downloader = youtube_dl.return_value.__enter__.return_value
-        raw_info = {"id": "video-id", "title": "Title"}
+        raw_info = {"id": "video-id", "title": "Title", "ext": "webm"}
         downloader.extract_info.return_value = raw_info
         downloader.prepare_filename.return_value = "Title [video-id].webm"
         downloader.sanitize_info.return_value = raw_info
@@ -30,8 +30,8 @@ class MediaServiceTest(unittest.TestCase):
         )
         downloader.sanitize_info.assert_called_once_with(raw_info)
         self.assertEqual(result, raw_info)
-        self.assertEqual(filename, "Title [video-id].mp4")
-        self.assertEqual(result["ext"], "mp4")
+        self.assertEqual(filename, "Title [video-id].webm")
+        self.assertEqual(result["ext"], "webm")
 
     @patch("backend.app.services.media.YoutubeDL")
     def test_wraps_extraction_error(self, youtube_dl: MagicMock) -> None:
@@ -49,7 +49,14 @@ class MediaServiceTest(unittest.TestCase):
         self, youtube_dl: MagicMock
     ) -> None:
         downloader = youtube_dl.return_value.__enter__.return_value
-        raw_info = {"id": "video-id", "title": "Title"}
+        raw_info = {
+            "id": "video-id",
+            "title": "Title",
+            "requested_formats": [
+                {"vcodec": "avc1.640028", "acodec": "none"},
+                {"vcodec": "none", "acodec": "mp4a.40.2"},
+            ],
+        }
         downloader.extract_info.return_value = raw_info
         downloader.prepare_filename.return_value = "video.mp4"
         downloader.sanitize_info.return_value = raw_info
@@ -64,6 +71,49 @@ class MediaServiceTest(unittest.TestCase):
             "https://example.com/video", download=False
         )
         self.assertEqual(task.status, "checked")
+        self.assertEqual(task.container, "mp4")
+
+    @patch("backend.app.services.media.extract_media_info")
+    def test_rejects_container_incompatible_with_best_codecs(
+        self, extract_media_info: MagicMock
+    ) -> None:
+        extract_media_info.return_value = (
+            {
+                "id": "video-id",
+                "requested_formats": [
+                    {"vcodec": "av01.0.08M.08", "acodec": "none"},
+                    {"vcodec": "none", "acodec": "mp4a.40.2"},
+                ],
+            },
+            "video.mp4",
+        )
+
+        with self.assertRaises(MediaExtractionError) as raised:
+            media_service.run_dry_run("https://example.com/video", "webm")
+
+        self.assertEqual(raised.exception.reason_code, "incompatible_container")
+        self.assertIn("WebM", str(raised.exception))
+        self.assertIn("mp4a.40.2", raised.exception.detail or "")
+
+    @patch("backend.app.services.media.extract_media_info")
+    def test_auto_selects_webm_for_vp9_and_opus(
+        self, extract_media_info: MagicMock
+    ) -> None:
+        extract_media_info.return_value = (
+            {
+                "id": "video-id",
+                "requested_formats": [
+                    {"vcodec": "vp9", "acodec": "none"},
+                    {"vcodec": "none", "acodec": "opus"},
+                ],
+            },
+            "video.webm",
+        )
+
+        task = media_service.run_dry_run("https://example.com/video", "auto")
+
+        self.assertEqual(task.container, "webm")
+        self.assertTrue(task.filename.endswith(".webm"))
 
     @patch("backend.app.services.media.subprocess.Popen")
     @patch("backend.app.services.media.extract_media_info")
@@ -71,7 +121,14 @@ class MediaServiceTest(unittest.TestCase):
         self, extract_media_info: MagicMock, popen: MagicMock
     ) -> None:
         extract_media_info.return_value = (
-            {"id": "video-id", "filesize": 6},
+            {
+                "id": "video-id",
+                "filesize": 6,
+                "requested_formats": [
+                    {"vcodec": "avc1.640028", "acodec": "none"},
+                    {"vcodec": "none", "acodec": "mp4a.40.2"},
+                ],
+            },
             "video.mp4",
         )
         checked_task = media_service.run_dry_run("https://example.com/video")
@@ -91,7 +148,7 @@ class MediaServiceTest(unittest.TestCase):
         command = popen.call_args.args[0]
         self.assertIn("-", command)
         self.assertIn(media_service.DOWNLOAD_FORMAT, command)
-        self.assertIn(media_service.FFMPEG_MP4_OUTPUT_ARGS, command)
+        self.assertIn(media_service.CONTAINER_OUTPUT_ARGS[task.container], command)
         self.assertNotIn(str(Path.cwd() / "downloads"), command)
 
 
@@ -116,6 +173,7 @@ class MediaRouterTest(unittest.TestCase):
 
         result = dry_run(DryRunRequest(url="https://example.com/video"))
 
+        run.assert_called_once_with("https://example.com/video", "auto")
         self.assertFalse(result.passed)
         self.assertEqual(result.reason_code, "blocked")
         self.assertIn("412", result.detail or "")

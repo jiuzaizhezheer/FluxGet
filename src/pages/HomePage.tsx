@@ -2,7 +2,7 @@ import { useState, type SubmitEvent } from "react";
 import { createDownload, dryRun, extractInfo } from "../api/client";
 import MediaCard from "../components/download/MediaCard";
 import MediaUrlForm from "../components/download/MediaUrlForm";
-import type { MediaInfo } from "../types/api";
+import type { ContainerChoice, MediaInfo, OutputContainer } from "../types/api";
 
 type PendingAction = "extracting" | "checking" | "starting" | null;
 
@@ -17,11 +17,13 @@ function triggerBrowserDownload(url: string) {
 
 export default function HomePage() {
   const [url, setUrl] = useState("");
+  const [container, setContainer] = useState<ContainerChoice>("auto");
   const [media, setMedia] = useState<MediaInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [dryRunId, setDryRunId] = useState<string | null>(null);
   const [dryRunMessage, setDryRunMessage] = useState<string | null>(null);
+  const [outputContainer, setOutputContainer] = useState<OutputContainer | null>(null);
   const [downloadHandedOff, setDownloadHandedOff] = useState(false);
 
   const isBusy = pendingAction !== null;
@@ -30,6 +32,7 @@ export default function HomePage() {
     setMedia(null);
     setDryRunId(null);
     setDryRunMessage(null);
+    setOutputContainer(null);
     setDownloadHandedOff(false);
     setError(null);
   }
@@ -37,6 +40,15 @@ export default function HomePage() {
   function handleUrlChange(nextUrl: string) {
     setUrl(nextUrl);
     resetResult();
+  }
+
+  function handleContainerChange(nextContainer: ContainerChoice) {
+    setContainer(nextContainer);
+    setDryRunId(null);
+    setDryRunMessage(null);
+    setOutputContainer(null);
+    setDownloadHandedOff(false);
+    setError(null);
   }
 
   async function handleExtractInfo(event: SubmitEvent<HTMLFormElement>) {
@@ -66,8 +78,8 @@ export default function HomePage() {
     setDryRunMessage(null);
     setPendingAction("checking");
     try {
-      const preflight = await dryRun(normalizedUrl);
-      if (!preflight.passed || !preflight.dry_run_id || !preflight.media) {
+      const preflight = await dryRun(normalizedUrl, container);
+      if (!preflight.passed || !preflight.dry_run_id || !preflight.media || !preflight.container) {
         const technicalDetail = preflight.detail ? `\n${preflight.detail}` : "";
         setError(`${preflight.message}${technicalDetail}`);
         return;
@@ -76,6 +88,7 @@ export default function HomePage() {
       setMedia(preflight.media);
       setDryRunId(preflight.dry_run_id);
       setDryRunMessage(preflight.message);
+      setOutputContainer(preflight.container);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : "下载预检失败",
@@ -93,6 +106,7 @@ export default function HomePage() {
     try {
       const task = await createDownload(dryRunId);
       setMedia(task.media);
+      setOutputContainer(task.container);
       triggerBrowserDownload(task.file_url);
       setDownloadHandedOff(true);
       setDryRunId(null);
@@ -122,9 +136,11 @@ export default function HomePage() {
 
       <MediaUrlForm
         url={url}
+        container={container}
         isBusy={isBusy}
         isExtracting={pendingAction === "extracting"}
         onUrlChange={handleUrlChange}
+        onContainerChange={handleContainerChange}
         onSubmit={handleExtractInfo}
       />
 
@@ -143,6 +159,7 @@ export default function HomePage() {
             media={media}
             dryRunId={dryRunId}
             dryRunMessage={dryRunMessage}
+            outputContainer={outputContainer}
             downloadHandedOff={downloadHandedOff}
             isBusy={isBusy}
             isChecking={pendingAction === "checking"}
