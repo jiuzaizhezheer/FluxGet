@@ -1,0 +1,8 @@
+.DS_Store
+.git
+.idea
+.venv
+dist
+node_modules
+__pycache__
+*.py[cod]

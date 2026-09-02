@@ -1,0 +1,99 @@
+# syntax=docker/dockerfile:1.7
+
+FROM debian:bookworm-slim AS builder
+
+ARG FFMPEG_VERSION=8.1.2
+ARG FFMPEG_SHA256=464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        libass-dev \
+        libfontconfig1-dev \
+        libfreetype-dev \
+        libfribidi-dev \
+        libmp3lame-dev \
+        libopus-dev \
+        libssl-dev \
+        libvorbis-dev \
+        libvpx-dev \
+        libwebp-dev \
+        libx264-dev \
+        libx265-dev \
+        nasm \
+        pkg-config \
+        xz-utils \
+        yasm \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /tmp/ffmpeg-source
+
+RUN curl --fail --location --show-error \
+        "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz" \
+        --output ffmpeg.tar.xz \
+    && echo "${FFMPEG_SHA256}  ffmpeg.tar.xz" | sha256sum --check --strict \
+    && tar --extract --file ffmpeg.tar.xz --strip-components=1
+
+RUN ./configure \
+        --prefix=/opt/ffmpeg \
+        --disable-debug \
+        --disable-doc \
+        --disable-ffplay \
+        --enable-gpl \
+        --enable-version3 \
+        --enable-openssl \
+        --enable-libass \
+        --enable-libfontconfig \
+        --enable-libfreetype \
+        --enable-libfribidi \
+        --enable-libmp3lame \
+        --enable-libopus \
+        --enable-libvorbis \
+        --enable-libvpx \
+        --enable-libwebp \
+        --enable-libx264 \
+        --enable-libx265 \
+    && make -j"$(nproc)" \
+    && make install
+
+FROM debian:bookworm-slim AS runtime
+
+ARG FFMPEG_VERSION=8.1.2
+
+LABEL org.opencontainers.image.title="FluxGet FFmpeg" \
+      org.opencontainers.image.version="${FFMPEG_VERSION}" \
+      org.opencontainers.image.source="https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        ca-certificates \
+        fontconfig \
+        fonts-dejavu-core \
+        libass9 \
+        libfontconfig1 \
+        libfreetype6 \
+        libfribidi0 \
+        libmp3lame0 \
+        libopus0 \
+        libssl3 \
+        libvorbis0a \
+        libvorbisenc2 \
+        libvpx7 \
+        libwebp7 \
+        libwebpmux3 \
+        libx264-164 \
+        libx265-199 \
+        zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/ffmpeg /opt/ffmpeg
+
+ENV PATH="/opt/ffmpeg/bin:${PATH}"
+
+WORKDIR /work
+
+ENTRYPOINT ["ffmpeg"]
+CMD ["-version"]

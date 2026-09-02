@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --cream: #efe9d9;
+  --cream-2: #e4dcc4;
+  --ink: #0f0f0f;
+  --ink-2: #2a2a2a;
+  --green: #1f8a4c;
+  --green-dark: #136636;
+  --pink: #f06ca8;
+  --pink-dark: #d14e8b;
+  --orange: #e85a1f;
+  --yellow: #f5c518;
+  --border-frame: 4px;
+  --border-inner: 3px;
+  --border-control: 2px;
+  --canvas: var(--cream);
+  --surface: var(--cream-2);
+  --text: var(--ink);
+  --text-muted: var(--ink-2);
+  --line: var(--ink);
+  --display: "Archivo Black", ui-sans-serif, system-ui, sans-serif;
+  --body: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--body);
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+.dark {
+  --canvas: var(--ink);
+  --surface: var(--ink-2);
+  --text: var(--cream);
+  --text-muted: var(--cream-2);
+  --line: var(--cream);
+  color-scheme: dark;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--canvas);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.download-hero::before,
+.download-hero::after {
+  position: absolute;
+  z-index: -1;
+  border: var(--border-frame) solid var(--line);
+  content: "";
+  pointer-events: none;
+}
+
+.download-hero::before {
+  top: 1rem;
+  right: -3rem;
+  width: 7rem;
+  height: 7rem;
+  background: var(--pink);
+  box-shadow: 10px 10px 0 var(--orange), 10px 10px 0 3px var(--line);
+  transform: rotate(-7deg);
+}
+
+.download-hero::after {
+  bottom: -7rem;
+  left: -7rem;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 999px;
+  background: var(--cream-2);
+}
+
+.environment-card:nth-child(3n + 1) {
+  background: var(--pink);
+  color: var(--ink);
+}
+
+.environment-card:nth-child(3n + 2) {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+.environment-card:nth-child(3n) {
+  background: var(--green-dark);
+  color: var(--cream);
+}
+
+@media (max-width: 640px) {
+  .download-hero::before {
+    top: -1.5rem;
+    right: -1.25rem;
+    width: 4rem;
+    height: 4rem;
+    box-shadow: 6px 6px 0 var(--orange), 6px 6px 0 3px var(--line);
+  }
+
+  .download-hero::after {
+    display: none;
+  }
+}
