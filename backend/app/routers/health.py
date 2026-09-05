@@ -3,7 +3,6 @@ from fastapi import APIRouter
 from backend.app.schemas import HealthResponse
 from backend.app.services.environment import get_environment_health
 
-
 router = APIRouter(tags=["environment"])
 
 

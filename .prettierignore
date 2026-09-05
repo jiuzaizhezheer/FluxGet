@@ -1,0 +1,7 @@
+dist
+node_modules
+.venv
+pnpm-lock.yaml
+uv.lock
+AGENTS.md
+CREATIVE_MODE_PROMPT.md

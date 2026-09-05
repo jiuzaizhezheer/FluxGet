@@ -22,7 +22,6 @@ from backend.app.services.media import (
     stream_download,
 )
 
-
 router = APIRouter(tags=["media"])
 
 

@@ -31,6 +31,33 @@ npx pnpm@10.34.5 dev
 
 打开 <http://localhost:5173>。后端 API 文档位于 <http://127.0.0.1:8000/docs>。
 
+## 开发检查
+
+首次安装依赖后启用提交钩子：
+
+```bash
+uv run pre-commit install --install-hooks
+```
+
+提交前会自动运行针对改动文件的格式与静态检查；推送前会额外运行前端类型检查和后端单元测试。也可以手动执行完整检查：
+
+```bash
+pnpm format:check
+pnpm lint
+pnpm check
+pnpm build
+pnpm test:backend
+```
+
+GitHub CI 根据 PR 的全部改动（推送时为本次推送的改动）选择检查：
+
+- 前端代码、Node 依赖或前端工具配置变更：运行 `Frontend`。
+- 后端代码、Python 依赖或 FFmpeg Dockerfile 变更：运行 `Backend`。
+- 两端同时变更、CI/共享配置或未分类文件变更：两端都运行。
+- 仅修改根目录 README、AGENTS、CREATIVE_MODE_PROMPT 或 `docs/` 下 Markdown：跳过两端检查。
+
+`CI Gate` 始终汇总结果；需要执行的检查失败、取消或意外跳过，以及改动检测失败，都会阻止通过。后续 `main` Ruleset 只需将 `CI Gate` 设置为必需状态检查，无需分别要求 `Frontend` 和 `Backend`。本地 Git 钩子仍沿用上述检查方式。
+
 ## 当前范围
 
 当前版本支持链接解析、dry-run 预检和单媒体流式下载。每次下载必须先通过格式可访问性预检；后端随后通过 yt-dlp 获取媒体，并将输出直接中转给浏览器，不在项目目录保存视频。页面通过 SSE 显示传输进度。下载任务状态暂存在后端进程内，服务重启后不会保留。

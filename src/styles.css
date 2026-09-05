@@ -64,7 +64,9 @@ input {
   width: 7rem;
   height: 7rem;
   background: var(--pink);
-  box-shadow: 10px 10px 0 var(--orange), 10px 10px 0 3px var(--line);
+  box-shadow:
+    10px 10px 0 var(--orange),
+    10px 10px 0 3px var(--line);
   transform: rotate(-7deg);
 }
 
@@ -98,7 +100,9 @@ input {
     right: -1.25rem;
     width: 4rem;
     height: 4rem;
-    box-shadow: 6px 6px 0 var(--orange), 6px 6px 0 3px var(--line);
+    box-shadow:
+      6px 6px 0 var(--orange),
+      6px 6px 0 3px var(--line);
   }
 
   .download-hero::after {

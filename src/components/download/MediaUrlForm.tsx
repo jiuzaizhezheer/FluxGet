@@ -21,7 +21,9 @@ export default function MediaUrlForm({
       onSubmit={onSubmit}
       className="mt-10 flex max-w-4xl flex-col gap-3 border-4 border-[var(--line)] bg-[var(--canvas)] p-3 shadow-[10px_10px_0_var(--orange)] sm:flex-row"
     >
-      <label htmlFor="media-url" className="sr-only">媒体链接</label>
+      <label htmlFor="media-url" className="sr-only">
+        媒体链接
+      </label>
       <input
         id="media-url"
         type="url"
