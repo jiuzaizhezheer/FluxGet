@@ -102,27 +102,24 @@ _tasks: dict[str, DownloadTask] = {}
 _tasks_lock = threading.RLock()
 
 
-def _selected_codecs(info: dict[str, Any]) -> tuple[list[str], list[str]]:
+def _selected_codecs(
+    info: dict[str, Any],
+) -> tuple[list[str] | None, list[str] | None]:
     requested_formats = info.get("requested_formats")
-    formats = (
-        [item for item in requested_formats if isinstance(item, dict)]
-        if isinstance(requested_formats, list)
-        else [info]
-    )
+    if isinstance(requested_formats, list):
+        formats = [item for item in requested_formats if isinstance(item, dict)]
+        if not formats:
+            formats = [info]
+    else:
+        formats = [info]
 
-    def collect(key: str) -> list[str]:
+    def collect(key: str) -> list[str] | None:
         codecs: list[str] = []
         for item in formats:
             codec = item.get(key)
-            if (
-                isinstance(codec, str)
-                and codec.lower() != "none"
-                and codec not in codecs
-            ):
-                codecs.append(codec)
-        if not codecs:
-            codec = info.get(key)
-            if isinstance(codec, str) and codec.lower() != "none":
+            if not isinstance(codec, str):
+                return None
+            if codec.lower() != "none" and codec not in codecs:
                 codecs.append(codec)
         return codecs
 
@@ -131,14 +128,16 @@ def _selected_codecs(info: dict[str, Any]) -> tuple[list[str], list[str]]:
 
 def _supports_codecs(
     container: OutputContainer,
-    video_codecs: list[str],
-    audio_codecs: list[str],
+    video_codecs: list[str] | None,
+    audio_codecs: list[str] | None,
 ) -> bool:
     video_prefixes, audio_prefixes = CONTAINER_CODEC_PREFIXES[container]
 
-    def supports(codecs: list[str], prefixes: tuple[str, ...] | None) -> bool:
+    def supports(codecs: list[str] | None, prefixes: tuple[str, ...] | None) -> bool:
         if prefixes is None:
             return True
+        if codecs is None:
+            return False
         return all(codec.lower().startswith(prefixes) for codec in codecs)
 
     return supports(video_codecs, video_prefixes) and supports(
@@ -157,11 +156,15 @@ def _resolve_container(
         return "mkv"
 
     if not _supports_codecs(choice, video_codecs, audio_codecs):
-        video = ", ".join(video_codecs) or "无"
-        audio = ", ".join(audio_codecs) or "无"
+        video = "未知" if video_codecs is None else ", ".join(video_codecs) or "无"
+        audio = "未知" if audio_codecs is None else ", ".join(audio_codecs) or "无"
         label = CONTAINER_LABELS[choice]
+        if video_codecs is None or audio_codecs is None:
+            message = f"无法确认 {label} 与最高质量音视频编码兼容，请选择“自动”。"
+        else:
+            message = f"{label} 与最高质量音视频编码不兼容，请选择“自动”或其他容器。"
         raise MediaExtractionError(
-            f"{label} 与最高质量音视频编码不兼容，请选择“自动”或其他容器。",
+            message,
             reason_code="incompatible_container",
             detail=f"最高质量编码：视频 {video}；音频 {audio}",
         )

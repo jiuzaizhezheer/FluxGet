@@ -115,6 +115,67 @@ class MediaServiceTest(unittest.TestCase):
         self.assertEqual(task.container, "webm")
         self.assertTrue(task.filename.endswith(".webm"))
 
+    @patch("backend.app.services.media.extract_media_info")
+    def test_rejects_explicit_container_when_codec_metadata_is_unknown(
+        self, extract_media_info: MagicMock
+    ) -> None:
+        extract_media_info.return_value = (
+            {
+                "id": "video-id",
+                "requested_formats": [
+                    {"vcodec": None, "acodec": "none"},
+                    {"vcodec": "none", "acodec": "opus"},
+                ],
+            },
+            "video.webm",
+        )
+
+        with self.assertRaises(MediaExtractionError) as raised:
+            media_service.run_dry_run("https://example.com/video", "webm")
+
+        self.assertEqual(raised.exception.reason_code, "incompatible_container")
+        self.assertIn("无法确认", str(raised.exception))
+        self.assertIn("视频 未知", raised.exception.detail or "")
+
+    @patch("backend.app.services.media.extract_media_info")
+    def test_auto_falls_back_to_mkv_when_codec_metadata_is_unknown(
+        self, extract_media_info: MagicMock
+    ) -> None:
+        extract_media_info.return_value = (
+            {"id": "video-id", "requested_formats": [{}, {}]},
+            "video.bin",
+        )
+
+        task = media_service.run_dry_run("https://example.com/video", "auto")
+
+        self.assertEqual(task.container, "mkv")
+        self.assertTrue(task.filename.endswith(".mkv"))
+
+    @patch("backend.app.services.media.extract_media_info")
+    def test_empty_requested_formats_does_not_imply_compatibility(
+        self, extract_media_info: MagicMock
+    ) -> None:
+        extract_media_info.return_value = (
+            {"id": "video-id", "requested_formats": []},
+            "video.bin",
+        )
+
+        with self.assertRaises(MediaExtractionError):
+            media_service.run_dry_run("https://example.com/video", "webm")
+
+    @patch("backend.app.services.media.extract_media_info")
+    def test_accepts_known_video_only_stream_for_mp4(
+        self, extract_media_info: MagicMock
+    ) -> None:
+        extract_media_info.return_value = (
+            {"id": "video-id", "vcodec": "avc1.640028", "acodec": "none"},
+            "video.mp4",
+        )
+
+        task = media_service.run_dry_run("https://example.com/video", "mp4")
+
+        self.assertEqual(task.container, "mp4")
+
     @patch("backend.app.services.media.subprocess.Popen")
     @patch("backend.app.services.media.extract_media_info")
     def test_streams_bytes_without_creating_an_output_file(
