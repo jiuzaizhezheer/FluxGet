@@ -12,7 +12,6 @@ from uuid import uuid4
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
 
-
 DownloadStatus = Literal["ready", "downloading", "completed", "failed", "cancelled"]
 DryRunReason = Literal[
     "blocked",
@@ -28,9 +27,7 @@ DryRunReason = Literal[
 
 # Select the best source video and audio streams. FFmpeg only remuxes them to MP4.
 DOWNLOAD_FORMAT = "bv*+ba/b"
-FFMPEG_MP4_OUTPUT_ARGS = (
-    "ffmpeg_o:-c copy -f mp4 -movflags frag_keyframe+empty_moov"
-)
+FFMPEG_MP4_OUTPUT_ARGS = "ffmpeg_o:-c copy -f mp4 -movflags frag_keyframe+empty_moov"
 
 
 class MediaExtractionError(Exception):
@@ -94,7 +91,9 @@ def _classify_extraction_error(message: str) -> tuple[DryRunReason, str]:
         return "blocked", "站点触发了访问风控，请停止重复请求并稍后再试"
     if "premium member" in normalized or "大会员" in normalized or "付费" in normalized:
         return "premium_required", "该内容需要具备对应权益的登录账号"
-    if any(word in normalized for word in ("login", "cookies", "sign in", "authentication")):
+    if any(
+        word in normalized for word in ("login", "cookies", "sign in", "authentication")
+    ):
         return "authentication_required", "该内容要求登录，请配置有效的账号 Cookie"
     if any(word in normalized for word in ("geo", "region", "country", "地区")):
         return "geo_restricted", "该内容存在地区访问限制"
@@ -102,9 +101,15 @@ def _classify_extraction_error(message: str) -> tuple[DryRunReason, str]:
         return "unsupported_url", "yt-dlp 不支持这个链接"
     if "no video formats" in normalized or "no formats" in normalized:
         return "no_formats", "没有找到可下载的媒体格式"
-    if any(word in normalized for word in ("unavailable", "private", "deleted", "not available")):
+    if any(
+        word in normalized
+        for word in ("unavailable", "private", "deleted", "not available")
+    ):
         return "unavailable", "该内容不可用、已删除或无权访问"
-    if any(word in normalized for word in ("http error", "timeout", "connection", "network")):
+    if any(
+        word in normalized
+        for word in ("http error", "timeout", "connection", "network")
+    ):
         return "network_error", "连接来源站点失败，请检查网络后再试"
     return "unknown", "yt-dlp 无法完成下载预检"
 
@@ -119,12 +124,14 @@ def extract_media_info(
         "simulate": True,
     }
     if check_formats:
-        options.update({
-            "check_formats": "selected",
-            "extractor_retries": 0,
-            "fragment_retries": 0,
-            "retries": 0,
-        })
+        options.update(
+            {
+                "check_formats": "selected",
+                "extractor_retries": 0,
+                "fragment_retries": 0,
+                "retries": 0,
+            }
+        )
     try:
         with YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)

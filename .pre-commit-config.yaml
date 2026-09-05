@@ -1,0 +1,46 @@
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: Ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+      - id: eslint
+        name: ESLint
+        entry: pnpm exec eslint --fix
+        language: system
+        files: '\.(ts|tsx)$'
+      - id: prettier
+        name: Prettier
+        entry: pnpm exec prettier --write --ignore-unknown
+        language: system
+        files: '\.(css|html|js|json|md|mjs|ts|tsx|yaml|yml)$'
+        exclude: '^(pnpm-lock\.yaml|uv\.lock)$'
+      - id: frontend-typecheck
+        name: Frontend type check
+        entry: pnpm check
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: backend-tests
+        name: Backend unit tests
+        entry: uv run python -m unittest discover -s backend/tests -v
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

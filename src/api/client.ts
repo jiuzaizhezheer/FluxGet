@@ -1,10 +1,18 @@
-import type { DownloadTask, DryRunResult, Health, MediaInfo } from "../types/api";
+import type {
+  DownloadTask,
+  DryRunResult,
+  Health,
+  MediaInfo,
+} from "../types/api";
 
 type ApiErrorBody = {
   detail?: unknown;
 };
 
-async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+async function requestJson<T>(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<T> {
   const response = await fetch(input, init);
   if (!response.ok) {
     let message = `请求失败（${response.status}）`;

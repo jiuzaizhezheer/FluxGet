@@ -47,29 +47,50 @@ export default function MediaCard({
           className="aspect-video w-full border-3 border-[var(--line)] object-cover sm:aspect-square"
         />
       ) : (
-        <div aria-hidden="true" className="grid aspect-video place-items-center border-3 border-[var(--line)] bg-[var(--green-dark)] font-[var(--display)] text-3xl text-[var(--cream)] sm:aspect-square">
+        <div
+          aria-hidden="true"
+          className="grid aspect-video place-items-center border-3 border-[var(--line)] bg-[var(--green-dark)] font-[var(--display)] text-3xl text-[var(--cream)] sm:aspect-square"
+        >
           FG
         </div>
       )}
 
       <div className="min-w-0">
-        <p className="font-[var(--mono)] text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">媒体信息</p>
-        <h2 className="mt-2 break-words font-[var(--display)] text-2xl leading-tight">{media.title ?? media.id ?? "未命名媒体"}</h2>
+        <p className="font-[var(--mono)] text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          媒体信息
+        </p>
+        <h2 className="mt-2 break-words font-[var(--display)] text-2xl leading-tight">
+          {media.title ?? media.id ?? "未命名媒体"}
+        </h2>
         <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 text-sm">
           <div>
-            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">时长</dt>
-            <dd className="mt-1 font-semibold">{formatDuration(media.duration)}</dd>
+            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">
+              时长
+            </dt>
+            <dd className="mt-1 font-semibold">
+              {formatDuration(media.duration)}
+            </dd>
           </div>
           <div>
-            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">大小</dt>
-            <dd className="mt-1 font-semibold">{formatFileSize(media.filesize ?? media.filesize_approx)}</dd>
+            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">
+              大小
+            </dt>
+            <dd className="mt-1 font-semibold">
+              {formatFileSize(media.filesize ?? media.filesize_approx)}
+            </dd>
           </div>
           <div>
-            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">格式</dt>
-            <dd className="mt-1 font-semibold uppercase">{media.ext ?? "未知"}</dd>
+            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">
+              格式
+            </dt>
+            <dd className="mt-1 font-semibold uppercase">
+              {media.ext ?? "未知"}
+            </dd>
           </div>
           <div>
-            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">来源</dt>
+            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">
+              来源
+            </dt>
             <dd className="mt-1 font-semibold">{media.extractor ?? "未知"}</dd>
           </div>
         </dl>
@@ -77,8 +98,12 @@ export default function MediaCard({
         <div className="mt-5 border-t-3 border-[var(--line)] pt-5">
           {downloadHandedOff ? (
             <div className="border-3 border-[var(--line)] bg-[var(--green-dark)] p-4 text-[var(--cream)]">
-              <p className="font-[var(--mono)] text-sm font-semibold uppercase tracking-wide">下载已交给浏览器</p>
-              <p className="mt-2 text-sm">请在浏览器下载列表中查看进度与结果。</p>
+              <p className="font-[var(--mono)] text-sm font-semibold uppercase tracking-wide">
+                下载已交给浏览器
+              </p>
+              <p className="mt-2 text-sm">
+                请在浏览器下载列表中查看进度与结果。
+              </p>
             </div>
           ) : !dryRunId ? (
             <button

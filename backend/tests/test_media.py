@@ -23,9 +23,7 @@ class MediaServiceTest(unittest.TestCase):
         downloader.prepare_filename.return_value = "Title [video-id].webm"
         downloader.sanitize_info.return_value = raw_info
 
-        result, filename = media_service.extract_media_info(
-            "https://example.com/video"
-        )
+        result, filename = media_service.extract_media_info("https://example.com/video")
 
         downloader.extract_info.assert_called_once_with(
             "https://example.com/video", download=False

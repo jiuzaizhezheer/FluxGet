@@ -49,7 +49,9 @@ export default function HomePage() {
     try {
       setMedia(await extractInfo(normalizedUrl));
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "媒体信息提取失败");
+      setError(
+        caughtError instanceof Error ? caughtError.message : "媒体信息提取失败",
+      );
     } finally {
       setPendingAction(null);
     }
@@ -75,7 +77,9 @@ export default function HomePage() {
       setDryRunId(preflight.dry_run_id);
       setDryRunMessage(preflight.message);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "下载预检失败");
+      setError(
+        caughtError instanceof Error ? caughtError.message : "下载预检失败",
+      );
     } finally {
       setPendingAction(null);
     }
@@ -94,7 +98,11 @@ export default function HomePage() {
       setDryRunId(null);
       setDryRunMessage(null);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "下载启动失败，请稍后重试");
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "下载启动失败，请稍后重试",
+      );
     } finally {
       setPendingAction(null);
     }
@@ -122,7 +130,10 @@ export default function HomePage() {
 
       <div className="mt-8 max-w-4xl" aria-live="polite">
         {error && (
-          <p role="alert" className="mb-6 whitespace-pre-wrap border-4 border-[var(--line)] bg-[var(--orange)] p-4 font-semibold text-[var(--ink)] shadow-[7px_7px_0_var(--line)]">
+          <p
+            role="alert"
+            className="mb-6 whitespace-pre-wrap border-4 border-[var(--line)] bg-[var(--orange)] p-4 font-semibold text-[var(--ink)] shadow-[7px_7px_0_var(--line)]"
+          >
             {error}
           </p>
         )}
