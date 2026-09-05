@@ -23,7 +23,8 @@ export default function HomePage() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [dryRunId, setDryRunId] = useState<string | null>(null);
   const [dryRunMessage, setDryRunMessage] = useState<string | null>(null);
-  const [outputContainer, setOutputContainer] = useState<OutputContainer | null>(null);
+  const [outputContainer, setOutputContainer] =
+    useState<OutputContainer | null>(null);
   const [downloadHandedOff, setDownloadHandedOff] = useState(false);
 
   const isBusy = pendingAction !== null;
@@ -79,7 +80,12 @@ export default function HomePage() {
     setPendingAction("checking");
     try {
       const preflight = await dryRun(normalizedUrl, container);
-      if (!preflight.passed || !preflight.dry_run_id || !preflight.media || !preflight.container) {
+      if (
+        !preflight.passed ||
+        !preflight.dry_run_id ||
+        !preflight.media ||
+        !preflight.container
+      ) {
         const technicalDetail = preflight.detail ? `\n${preflight.detail}` : "";
         setError(`${preflight.message}${technicalDetail}`);
         return;

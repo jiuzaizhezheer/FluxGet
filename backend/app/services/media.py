@@ -114,7 +114,11 @@ def _selected_codecs(info: dict[str, Any]) -> tuple[list[str], list[str]]:
         codecs: list[str] = []
         for item in formats:
             codec = item.get(key)
-            if isinstance(codec, str) and codec.lower() != "none" and codec not in codecs:
+            if (
+                isinstance(codec, str)
+                and codec.lower() != "none"
+                and codec not in codecs
+            ):
                 codecs.append(codec)
         if not codecs:
             codec = info.get(key)

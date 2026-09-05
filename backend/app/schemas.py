@@ -27,18 +27,21 @@ class DryRunRequest(BaseModel):
 
 class DryRunResponse(BaseModel):
     passed: bool
-    reason_code: Literal[
-        "blocked",
-        "authentication_required",
-        "premium_required",
-        "geo_restricted",
-        "unsupported_url",
-        "unavailable",
-        "no_formats",
-        "network_error",
-        "incompatible_container",
-        "unknown",
-    ] | None = None
+    reason_code: (
+        Literal[
+            "blocked",
+            "authentication_required",
+            "premium_required",
+            "geo_restricted",
+            "unsupported_url",
+            "unavailable",
+            "no_formats",
+            "network_error",
+            "incompatible_container",
+            "unknown",
+        ]
+        | None
+    ) = None
     message: str
     detail: str | None = None
     dry_run_id: str | None = None

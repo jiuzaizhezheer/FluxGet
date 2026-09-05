@@ -82,8 +82,12 @@ export default function MediaCard({
             </dd>
           </div>
           <div>
-            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">格式</dt>
-            <dd className="mt-1 font-semibold uppercase">{outputContainer ?? media.ext ?? "未知"}</dd>
+            <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">
+              格式
+            </dt>
+            <dd className="mt-1 font-semibold uppercase">
+              {outputContainer ?? media.ext ?? "未知"}
+            </dd>
           </div>
           <div>
             <dt className="font-[var(--mono)] uppercase tracking-wider text-[var(--text-muted)]">

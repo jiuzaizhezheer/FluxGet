@@ -27,7 +27,9 @@ export default function MediaUrlForm({
       className="mt-10 max-w-4xl border-4 border-[var(--line)] bg-[var(--canvas)] p-3 shadow-[10px_10px_0_var(--orange)]"
     >
       <div className="flex flex-col gap-3 sm:flex-row">
-        <label htmlFor="media-url" className="sr-only">媒体链接</label>
+        <label htmlFor="media-url" className="sr-only">
+          媒体链接
+        </label>
         <input
           id="media-url"
           type="url"
@@ -48,13 +50,18 @@ export default function MediaUrlForm({
       </div>
 
       <div className="mt-3 flex flex-col gap-2 border-t-2 border-[var(--line)] pt-3 sm:flex-row sm:items-center">
-        <label htmlFor="output-container" className="font-[var(--mono)] text-xs font-semibold uppercase tracking-[0.14em]">
+        <label
+          htmlFor="output-container"
+          className="font-[var(--mono)] text-xs font-semibold uppercase tracking-[0.14em]"
+        >
           输出容器
         </label>
         <select
           id="output-container"
           value={container}
-          onChange={(event) => onContainerChange(event.target.value as ContainerChoice)}
+          onChange={(event) =>
+            onContainerChange(event.target.value as ContainerChoice)
+          }
           disabled={isBusy}
           className="border-2 border-[var(--line)] bg-[var(--surface)] px-3 py-2 font-[var(--mono)] text-sm font-semibold uppercase text-[var(--text)] outline-none focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[var(--pink)] disabled:cursor-not-allowed disabled:opacity-40"
         >
@@ -64,7 +71,9 @@ export default function MediaUrlForm({
           <option value="webm">WebM</option>
           <option value="mov">MOV</option>
         </select>
-        <p className="text-xs text-[var(--text-muted)] sm:ml-auto">保留最高质量编码，不兼容时预检会直接提示。</p>
+        <p className="text-xs text-[var(--text-muted)] sm:ml-auto">
+          保留最高质量编码，不兼容时预检会直接提示。
+        </p>
       </div>
     </form>
   );

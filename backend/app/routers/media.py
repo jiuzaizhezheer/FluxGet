@@ -13,6 +13,7 @@ from backend.app.schemas import (
     ExtractInfoResponse,
 )
 from backend.app.services.media import (
+    CONTAINER_MEDIA_TYPES,
     DownloadTaskError,
     MediaExtractionError,
     create_download_task,
@@ -20,7 +21,6 @@ from backend.app.services.media import (
     get_download_task,
     run_dry_run,
     stream_download,
-    CONTAINER_MEDIA_TYPES,
 )
 
 router = APIRouter(tags=["media"])
