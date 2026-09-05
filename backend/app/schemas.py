@@ -22,6 +22,7 @@ class ExtractInfoResponse(RootModel[dict[str, Any]]):
 
 class DryRunRequest(BaseModel):
     url: HttpUrl
+    container: Literal["auto", "mp4", "mkv", "webm", "mov"] = "auto"
 
 
 class DryRunResponse(BaseModel):
@@ -36,6 +37,7 @@ class DryRunResponse(BaseModel):
             "unavailable",
             "no_formats",
             "network_error",
+            "incompatible_container",
             "unknown",
         ]
         | None
@@ -45,6 +47,7 @@ class DryRunResponse(BaseModel):
     dry_run_id: str | None = None
     filename: str | None = None
     media: dict[str, Any] | None = None
+    container: Literal["mp4", "mkv", "webm", "mov"] | None = None
 
 
 class CreateDownloadRequest(BaseModel):
@@ -55,4 +58,5 @@ class DownloadTaskResponse(BaseModel):
     id: str
     filename: str
     media: dict[str, Any]
+    container: Literal["mp4", "mkv", "webm", "mov"]
     file_url: str

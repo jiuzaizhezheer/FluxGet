@@ -13,6 +13,8 @@ from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
 
 DownloadStatus = Literal["ready", "downloading", "completed", "failed", "cancelled"]
+ContainerChoice = Literal["auto", "mp4", "mkv", "webm", "mov"]
+OutputContainer = Literal["mp4", "mkv", "webm", "mov"]
 DryRunReason = Literal[
     "blocked",
     "authentication_required",
@@ -22,12 +24,44 @@ DryRunReason = Literal[
     "unavailable",
     "no_formats",
     "network_error",
+    "incompatible_container",
     "unknown",
 ]
 
-# Select the best source video and audio streams. FFmpeg only remuxes them to MP4.
+# Select the best source video and audio streams. FFmpeg only remuxes them.
 DOWNLOAD_FORMAT = "bv*+ba/b"
-FFMPEG_MP4_OUTPUT_ARGS = "ffmpeg_o:-c copy -f mp4 -movflags frag_keyframe+empty_moov"
+CONTAINER_OUTPUT_ARGS: dict[OutputContainer, str] = {
+    "mp4": "ffmpeg_o:-c copy -f mp4 -movflags frag_keyframe+empty_moov",
+    "mkv": "ffmpeg_o:-c copy -f matroska",
+    "webm": "ffmpeg_o:-c copy -f webm",
+    "mov": "ffmpeg_o:-c copy -f mov -movflags frag_keyframe+empty_moov",
+}
+CONTAINER_MEDIA_TYPES: dict[OutputContainer, str] = {
+    "mp4": "video/mp4",
+    "mkv": "video/x-matroska",
+    "webm": "video/webm",
+    "mov": "video/quicktime",
+}
+CONTAINER_LABELS: dict[OutputContainer, str] = {
+    "mp4": "MP4",
+    "mkv": "MKV",
+    "webm": "WebM",
+    "mov": "MOV",
+}
+CONTAINER_CODEC_PREFIXES: dict[
+    OutputContainer, tuple[tuple[str, ...] | None, tuple[str, ...] | None]
+] = {
+    "mp4": (
+        ("avc", "h264", "hev", "hvc", "h265", "av01", "av1", "vp9", "vp09", "mp4v"),
+        ("mp4a", "aac", "mp3", "ac3", "eac3", "alac", "opus", "flac"),
+    ),
+    "mkv": (None, None),
+    "webm": (("vp8", "vp08", "vp9", "vp09", "av01", "av1"), ("opus", "vorbis")),
+    "mov": (
+        ("avc", "h264", "hev", "hvc", "h265", "prores", "mjpeg", "mp4v"),
+        ("mp4a", "aac", "mp3", "ac3", "eac3", "alac", "pcm"),
+    ),
+}
 
 
 class MediaExtractionError(Exception):
@@ -54,6 +88,7 @@ class DownloadTask:
     url: str
     filename: str
     media: dict[str, Any]
+    container: OutputContainer
     status: DownloadStatus | Literal["checked"] = "checked"
     progress: float | None = 0
     downloaded_bytes: int = 0
@@ -65,6 +100,75 @@ class DownloadTask:
 
 _tasks: dict[str, DownloadTask] = {}
 _tasks_lock = threading.RLock()
+
+
+def _selected_codecs(
+    info: dict[str, Any],
+) -> tuple[list[str] | None, list[str] | None]:
+    requested_formats = info.get("requested_formats")
+    if isinstance(requested_formats, list):
+        formats = [item for item in requested_formats if isinstance(item, dict)]
+        if not formats:
+            formats = [info]
+    else:
+        formats = [info]
+
+    def collect(key: str) -> list[str] | None:
+        codecs: list[str] = []
+        for item in formats:
+            codec = item.get(key)
+            if not isinstance(codec, str):
+                return None
+            if codec.lower() != "none" and codec not in codecs:
+                codecs.append(codec)
+        return codecs
+
+    return collect("vcodec"), collect("acodec")
+
+
+def _supports_codecs(
+    container: OutputContainer,
+    video_codecs: list[str] | None,
+    audio_codecs: list[str] | None,
+) -> bool:
+    video_prefixes, audio_prefixes = CONTAINER_CODEC_PREFIXES[container]
+
+    def supports(codecs: list[str] | None, prefixes: tuple[str, ...] | None) -> bool:
+        if prefixes is None:
+            return True
+        if codecs is None:
+            return False
+        return all(codec.lower().startswith(prefixes) for codec in codecs)
+
+    return supports(video_codecs, video_prefixes) and supports(
+        audio_codecs, audio_prefixes
+    )
+
+
+def _resolve_container(
+    choice: ContainerChoice, info: dict[str, Any]
+) -> OutputContainer:
+    video_codecs, audio_codecs = _selected_codecs(info)
+    if choice == "auto":
+        for candidate in ("webm", "mp4", "mov", "mkv"):
+            if _supports_codecs(candidate, video_codecs, audio_codecs):
+                return candidate
+        return "mkv"
+
+    if not _supports_codecs(choice, video_codecs, audio_codecs):
+        video = "未知" if video_codecs is None else ", ".join(video_codecs) or "无"
+        audio = "未知" if audio_codecs is None else ", ".join(audio_codecs) or "无"
+        label = CONTAINER_LABELS[choice]
+        if video_codecs is None or audio_codecs is None:
+            message = f"无法确认 {label} 与最高质量音视频编码兼容，请选择“自动”。"
+        else:
+            message = f"{label} 与最高质量音视频编码不兼容，请选择“自动”或其他容器。"
+        raise MediaExtractionError(
+            message,
+            reason_code="incompatible_container",
+            detail=f"最高质量编码：视频 {video}；音频 {audio}",
+        )
+    return choice
 
 
 def _estimated_size(info: dict[str, Any]) -> int | None:
@@ -147,18 +251,21 @@ def extract_media_info(
 
     if not isinstance(sanitized_info, dict):
         raise MediaExtractionError("yt-dlp 未返回有效的媒体信息")
-    sanitized_info["ext"] = "mp4"
-    filename = Path(filename).with_suffix(".mp4").name
     return sanitized_info, filename
 
 
-def run_dry_run(url: str) -> DownloadTask:
+def run_dry_run(url: str, container: ContainerChoice = "auto") -> DownloadTask:
     media, filename = extract_media_info(url, check_formats=True)
+    resolved_container = _resolve_container(container, media)
+    media = dict(media)
+    media["ext"] = resolved_container
+    filename = Path(filename).with_suffix(f".{resolved_container}").name
     task = DownloadTask(
         id=uuid4().hex,
         url=url,
         filename=filename,
         media=media,
+        container=resolved_container,
         total_bytes=_estimated_size(media),
     )
     with _tasks_lock:
@@ -239,9 +346,9 @@ def stream_download(task_id: str) -> Iterator[bytes]:
         "--format",
         DOWNLOAD_FORMAT,
         "--merge-output-format",
-        "mp4",
+        task.container,
         "--downloader-args",
-        FFMPEG_MP4_OUTPUT_ARGS,
+        CONTAINER_OUTPUT_ARGS[task.container],
         "--output",
         "-",
         "--",

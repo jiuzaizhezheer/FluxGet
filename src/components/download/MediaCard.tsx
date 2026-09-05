@@ -1,9 +1,10 @@
-import type { MediaInfo } from "../../types/api";
+import type { MediaInfo, OutputContainer } from "../../types/api";
 
 type MediaCardProps = {
   media: MediaInfo;
   dryRunId: string | null;
   dryRunMessage: string | null;
+  outputContainer: OutputContainer | null;
   downloadHandedOff: boolean;
   isBusy: boolean;
   isChecking: boolean;
@@ -30,6 +31,7 @@ export default function MediaCard({
   media,
   dryRunId,
   dryRunMessage,
+  outputContainer,
   downloadHandedOff,
   isBusy,
   isChecking,
@@ -84,7 +86,7 @@ export default function MediaCard({
               格式
             </dt>
             <dd className="mt-1 font-semibold uppercase">
-              {media.ext ?? "未知"}
+              {outputContainer ?? media.ext ?? "未知"}
             </dd>
           </div>
           <div>
